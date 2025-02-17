@@ -305,6 +305,58 @@ class MenuBar extends React.PureComponent {
               }}
             />
           </Tooltip>
+          <Tooltip content="Close Application" position="bottom">
+            <AnchorButton
+              className={styles.menubarButton}
+              type="button"
+              icon="cross"
+              intent="danger"
+              onClick={() => {
+                const baseUrl = window.location.origin;
+
+                // First confirm with user
+                if (
+                  window.confirm(
+                    "Are you sure you want to close the application?"
+                  )
+                ) {
+                  fetch(`${baseUrl}/shutdown`, {
+                    method: "POST",
+                    headers: {
+                      Accept: "application/json",
+                      "Content-Type": "application/json",
+                    },
+                  })
+                    .then((response) => {
+                      if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                      }
+                      console.log("Shutdown request sent successfully");
+
+                      // Show a message to user
+                      alert(
+                        "Server is shutting down. You can close this window."
+                      );
+
+                      // Try multiple methods to close the window
+                      window.close();
+                      // For browsers that block window.close()
+                      if (window.opener) {
+                        window.opener = null;
+                      }
+                      // Alternative approach
+                      window.location.href = "about:blank";
+                    })
+                    .catch((error) => {
+                      console.error("Error sending shutdown request:", error);
+                      alert(
+                        "Error shutting down the server. Please close the window manually."
+                      );
+                    });
+                }
+              }}
+            />
+          </Tooltip>
         </ButtonGroup>
         <Subset
           subsetPossible={subsetPossible}
