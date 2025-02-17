@@ -1,4 +1,16 @@
 :local(.menubarButton) {
-  margin-top: 8px;
-  margin-left: 8px;
+  margin: 4px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:local(.buttonGroup) {
+  display: flex !important;
+  align-items: center !important;
+}
+:local(.buttonGroupSpaced) {
+  margin-left: 8px !important;
 }
