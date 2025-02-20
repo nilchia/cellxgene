@@ -357,6 +357,20 @@ class MenuBar extends React.PureComponent {
               }}
             />
           </Tooltip>
+          <Tooltip content="Export to Galaxy" position="bottom">
+            <AnchorButton
+              className={styles.menubarButton}
+              type="button"
+              icon="cross"
+              intent="danger"
+              onClick={() => {
+                const baseUrl = window.location.origin;
+                fetch(`${baseUrl}/export`, {
+                    method: "POST"
+                })
+              }}
+            />
+          </Tooltip>
         </ButtonGroup>
         <Subset
           subsetPossible={subsetPossible}
