@@ -361,8 +361,8 @@ class MenuBar extends React.PureComponent {
             <AnchorButton
               className={styles.menubarButton}
               type="button"
-              icon="cross"
-              intent="danger"
+              icon="export"
+              intent="primary"
               onClick={() => {
                 const baseUrl = window.location.origin;
                 fetch(`${baseUrl}/export`, {
