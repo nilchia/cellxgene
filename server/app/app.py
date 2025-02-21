@@ -5,7 +5,9 @@ from functools import wraps
 from flask_cors import CORS
 import signal
 from threading import Timer
-import server.common.annotations.local_file_csv
+import glob
+import galaxy_ie_helpers
+
 
 from flask import (
     Flask,
@@ -242,23 +244,32 @@ class Server:
         self.app.json_encoder = StrictJSONEncoder
         server_config = app_config.server_config
 
+        # export to galaxy
+        @self.app.route('/export', methods=['POST'])
+        def export():
+            cell_labels_file = glob.glob(f"annotation_files/*-cell-labels-*.csv")[0]
+            galaxy_ie_helpers.put(cell_labels_file, "cell-labels")
+            gene_sets_file = glob.glob(f"annotation_files/*-gene-sets-*.csv")[0]
+            galaxy_ie_helpers.put(gene_sets_file, "gene-sets")
+            return '', 204
+
         # shutdown
         @self.app.route('/shutdown', methods=['POST'])
         def shutdown():
             try:
-                print("Shutting down server...")                
+                print("Shutting down server...")
                 response = make_response('Server shutting down...', 200)
                 response.headers['Access-Control-Allow-Origin'] = '*'
-                
+
                 def shutdown_server():
                     os.kill(os.getpid(), signal.SIGINT)
-                
+
                 Timer(0.1, shutdown_server).start()
                 return response
             except Exception as e:
                 print(f"Error during shutdown: {e}")
                 return 'Shutdown failed', 500
-            
+
         # enable session data
         self.app.permanent_session_lifetime = datetime.timedelta(days=50 * 365)
 
