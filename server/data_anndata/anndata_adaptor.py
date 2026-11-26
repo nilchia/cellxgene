@@ -1,4 +1,5 @@
 import warnings
+import importlib.metadata
 
 import anndata
 import numpy as np
@@ -16,7 +17,7 @@ from server.common.utils.type_conversion_utils import get_schema_type_hint_of_ar
 from server.data_common.data_adaptor import DataAdaptor
 from server.common.fbs.matrix import encode_matrix_fbs
 
-anndata_version = version.parse(str(anndata.__version__)).release
+anndata_version = version.parse(str(importlib.metadata.version('anndata'))).release
 
 
 def anndata_version_is_pre_070():
@@ -63,7 +64,7 @@ class AnndataAdaptor(DataAdaptor):
         return "cellxgene anndata adaptor version"
 
     def get_library_versions(self):
-        return dict(anndata=str(anndata.__version__))
+        return dict(anndata=str(importlib.metadata.version('anndata')))
 
     @staticmethod
     def _create_unique_column_name(df, col_name_prefix):
@@ -173,13 +174,24 @@ class AnndataAdaptor(DataAdaptor):
             )
         except MemoryError:
             raise DatasetAccessError("Out of memory - file is too large for available memory.")
-        except Exception:
+        except Exception as e:
             import traceback
+            error_msg = str(e)
 
-            message = (
-                "File not found or is inaccessible. File must be an .h5ad object. "
-                "Please check your input and try again."
-            )
+            # IMPROVEMENT: Broadly catch ANY version incompatibility
+            if "No read method registered" in error_msg and "IOSpec" in error_msg:
+                message = (
+                    "Error loading file: This H5AD file uses a newer internal format that "
+                    "your version of 'anndata' cannot read.\n"
+                    f"The specific error was: {error_msg}\n"
+                    "Please upgrade anndata in your environment (pip install --upgrade anndata)."
+                )
+            else:
+                message = (
+                    "File not found or is inaccessible. File must be an .h5ad object. "
+                    "Please check your input and try again."
+                )
+
             if self.server_config.app__verbose:
                 message += f"\n{traceback.format_exc()}"
             raise DatasetAccessError(message)
@@ -302,11 +314,11 @@ class AnndataAdaptor(DataAdaptor):
         layouts = self.dataset_config.embeddings__names
 
         if layouts is None or len(layouts) == 0:
-            layouts = [key[2:] for key in self.data.obsm_keys() if type(key) is str and key.startswith("X_")]
+            layouts = [key[2:] for key in list(self.data.obsm.keys()) if type(key) is str and key.startswith("X_")]
 
         # remove invalid layouts
         valid_layouts = []
-        obsm_keys = self.data.obsm_keys()
+        obsm_keys = list(self.data.obsm.keys())
         for layout in layouts:
             layout_name = f"X_{layout}"
             if layout_name not in obsm_keys:
